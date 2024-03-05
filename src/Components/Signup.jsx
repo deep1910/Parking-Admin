@@ -32,10 +32,10 @@ const Signup = () => {
  
   return (
     <main >        
-        <section>
+        <section style={{margin:100,marginLeft:300, marginRight:100, backgroundColor:'#c0c0c0', width:400, height:300,}}>
             <div>
                 <div>                                                                                            
-                    <form>                                                                                            
+                    <form style={{padding:60,display:'flex', flexDirection:'column', gap:20}}>                                                                                            
                         <div>
                             <label htmlFor="email-address">
                                 Email address

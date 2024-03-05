@@ -52,11 +52,9 @@ const Login = () => {
     return(
         <>
             <main >        
-                <section>
-                    <div>                                            
-                                     
-                                                       
-                        <form>                                              
+                <section style={{margin:20,marginLeft:500,marginRight:500, backgroundColor:"#c0c0c0", width:300, height:300, }}>
+                    <div style={{padding:20}}>                              
+                        <form style={{display:'flex', flexDirection:'column', gap:20}}>                                              
                             <div>
                                 <label htmlFor="email-address">
                                     Email address
@@ -99,8 +97,7 @@ const Login = () => {
                             <NavLink to="/signup">
                                 Sign up
                             </NavLink>
-                        </p>
-                                                   
+                        </p>         
                     </div>
                 </section>
             </main>

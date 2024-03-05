@@ -36,9 +36,13 @@ const [mapStyle, setMapStyle] = useState("mapbox://styles/mapbox/streets-v12");
 
 const [parkings, setParkings] = useState([[76.6771746,20.7872743],[76.6782850,20.7862800], [76.6793840, 20.7892750]]);
 const [tools, setTools] = useState(false)
+
+
+
 const [parkcoord, setParkcoord] = useState([]);
 const [parkname, setParkname] = useState("");
-
+const [pricing, setPricing] = useState("");
+const [address, setAddress] = useState("");
 
 mapboxgl.accessToken ="pk.eyJ1IjoiZGVlcDE5MTAiLCJhIjoiY2x0NXJtNGJ3MDN3ODJsdGd5M2NmdGdwbCJ9.0-tDsI1WSTyYZihiH-PA0Q";
 
@@ -296,11 +300,11 @@ async function addParking()  {
 
   
 const cityData = {
-  name: "Los Angeles",
-  state: "CA",
-  country: "USA",
+  pricing: pricing,
   parkcoord:objectParkcoord,
-  parkname:parkname
+  parkname:parkname,
+  address:address,
+  availability:34
 };
 
 
@@ -353,6 +357,9 @@ useEffect(() => {
        {tools && 
        <div  >
        <input style={{marginRight:15, padding:8, width:175}} value={parkname} onChange={(e)=> setParkname(e.target.value) } placeholder="Parking Name" ></input> 
+       <input style={{marginRight:15, padding:8, width:175}} value={address} onChange={(e)=> setAddress(e.target.value) } placeholder="Address" ></input> 
+       <input style={{marginRight:15, padding:8, width:175}} value={pricing} onChange={(e)=> setPricing(e.target.value) } placeholder="Pricing in Rs" ></input> 
+
        <button style={{padding:8 ,borderRadius:30}} onClick={()=> addParking(parkcoord)}>Save Parking</button>
      
         </div>

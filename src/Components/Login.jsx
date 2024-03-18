@@ -56,7 +56,7 @@ const Login = () => {
                     <div style={{padding:20}}>                              
                         <form style={{display:'flex', flexDirection:'column', gap:20}}>                                              
                             <div>
-                                <label htmlFor="email-address">
+                                <label style={{fontSize:20}} htmlFor="email-address">
                                     Email address
                                 </label>
                                 <input

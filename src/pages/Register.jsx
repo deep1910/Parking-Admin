@@ -11,13 +11,12 @@ import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 
 import { collection, addDoc, doc , onSnapshot ,getDocs} from "firebase/firestore";
 import {db} from '../firebaseConfig';
-
-
+// import { Database } from "firebase/database";
+import { database } from "../firebaseConfig";
+import {ref,onValue } from 'firebase/database'
 import TooltipControl from '@mapbox-controls/tooltip';
 import '@mapbox-controls/tooltip/src/index.css';
 
-
-// const AnyReactComponent = ({ text }) => <div>{text}</div>;
 
 
 
@@ -27,15 +26,17 @@ function Register() {
   const [lat, setLat] = useState(20.7892);
   const [zoom, setZoom] = useState(14);
   
-  // const [markercoord, setMarkercoord] = useState([]);
-  // const [coord, setCoord] = useState([]);
-
 
 const mapContainerRef = useRef(null);
-const [mapStyle, setMapStyle] = useState("mapbox://styles/mapbox/streets-v12");
+const markerRef = useRef(null);
+// `mapbox://styles/mapbox/satellite-v9`
+// "mapbox://styles/mapbox/streets-v12"
+const [mapStyle, setMapStyle] = useState(`mapbox://styles/mapbox/satellite-streets-v12`);
 
 const [parkings, setParkings] = useState([[76.6771746,20.7872743],[76.6782850,20.7862800], [76.6793840, 20.7892750]]);
 const [tools, setTools] = useState(false)
+
+const citiesCollectionRef = collection(db, "names");
 
 
 
@@ -44,11 +45,39 @@ const [parkname, setParkname] = useState("");
 const [pricing, setPricing] = useState("");
 const [address, setAddress] = useState("");
 
+const [realtime, setRealtime] = useState([]);
+
+const[ tempareacoord, setTempareacoord] = useState([])
 mapboxgl.accessToken ="pk.eyJ1IjoiZGVlcDE5MTAiLCJhIjoiY2x0NXJtNGJ3MDN3ODJsdGd5M2NmdGdwbCJ9.0-tDsI1WSTyYZihiH-PA0Q";
+
+
+useEffect(()=>{
+  // const id = userdetail.id;
+  // console.log(id);
+ // checkauthenticated()
+  //console.log(userdetail?.id);
+  const dbstarRef = ref (database, 'users/user/' );
+         
+  const unsubscribe =  onValue(dbstarRef, (snapshot) => {
+      const data = snapshot.val();
+   
+      const dataArray = Object.values(data);
+      // console.log("Dataarray",dataArray);
+      setTimeout(()=>{
+        setRealtime(dataArray)
+      },5000)
+
+  })
+
+  
+  return (()=> unsubscribe())
+}, [realtime])
+
+
 
 useEffect(() => {
  
-  const map = new mapboxgl.Map({
+  const map1 = new mapboxgl.Map({
     container: mapContainerRef.current,
     style: mapStyle,
     center: [76.67, 20.78], // longitude and latitude
@@ -60,7 +89,7 @@ useEffect(() => {
   const nav = new mapboxgl.NavigationControl({
     visualizePitch: true
 });
-map.addControl(nav, 'bottom-right');
+map1.addControl(nav, 'bottom-right');
 
 
 
@@ -68,17 +97,36 @@ map.addControl(nav, 'bottom-right');
 
 
 
+// parkings.forEach(parking => {
+//   const marker = new mapboxgl.Marker()
+//     .setLngLat(parking)
+//     .addTo(map1);
 
+// })
 
+realtime.forEach((real, index) => {
+  // Create a new div element for the marker
+  if(real.location && real.location.coords){
+  const el = document.createElement('div');
+  el.style.width = '20px';
+  el.style.height = '20px';
+  el.style.backgroundColor =  'blue'; // alternate colors for each marker
 
-parkings.forEach(parking => {
-  const marker = new mapboxgl.Marker()
-    .setLngLat(parking)
-    .addTo(map);
+  const number = "<h1>" + real.license+ "</h1>";
+  // Create a new marker with the div as its element
+   markerRef.current = new mapboxgl.Marker(el)
+    // Set the marker's coordinates
+    .setLngLat([real.location.coords.longitude, real.location.coords.latitude])
+    // Add the marker to the map
+    .setPopup(new mapboxgl.Popup().setHTML(number))
+    // .setPopup(new mapboxgl.Popup().setHTML(number ? number : "No License")) 
+    .addTo(map1);
 
-})
+ 
+  }
+});
 
-
+// markerRef.current.togglePopup();
 
   // Initialize the geolocate control.
 const geolocate = new mapboxgl.GeolocateControl({
@@ -89,8 +137,8 @@ const geolocate = new mapboxgl.GeolocateControl({
   showAccuracyCircle:true,
 });
 // Add the control to the map.
-map.addControl(geolocate);
-map.on('load', () => {
+map1.addControl(geolocate);
+map1.on('load', () => {
   geolocate.trigger();
 });
 
@@ -104,18 +152,18 @@ const draw = new MapboxDraw({
   }
 });
 if(tools){
-  map.addControl(draw);
+  map1.addControl(draw);
 
 }
 
 // Store the coordinates of the drawn polygon
-map.on('draw.create', updateArea);
+map1.on('draw.create', updateArea);
 
 function updateArea(e) {
   const data = draw.getAll();
   if (data.features.length > 0) {
     const coordinates = data.features[0].geometry.coordinates;
-    console.log(coordinates);
+    // console.log(coordinates);
     setParkcoord(coordinates);
   }
 }
@@ -123,8 +171,8 @@ function updateArea(e) {
 
 
 
-map.on('load', function() {
-  map.addSource('single-point', {
+map1.on('load', function() {
+  map1.addSource('single-point', {
     type: 'geojson',
     data: {
       type: 'FeatureCollection',
@@ -146,14 +194,8 @@ const geocoder = new MapboxGeocoder({
 
 
 
-
-
-
-const citiesCollectionRef = collection(db, "names");
-
-
   async function fetchData() {
-    console.log("Data got ");
+    // console.log("Data got ");
     
     const querySnapshot = await getDocs(citiesCollectionRef);
   
@@ -161,7 +203,7 @@ const citiesCollectionRef = collection(db, "names");
       id: doc.id,
       ...doc.data()
   }));
-  console.log(cities.length);
+  // console.log(cities.length);
 
   const markercoord = [];
   const coord = [];
@@ -170,23 +212,24 @@ const citiesCollectionRef = collection(db, "names");
 
 
    cities.forEach((city)=> {
- 
+    //  console.log(city);
      const coordinates = Object.values(city.parkcoord)
-     console.log(coordinates);
+    //  console.log(coordinates);
 
      markercoord.push(coordinates[0]);
 
      coord.push(coordinates);
-
-
-
-
+     setTempareacoord(coord);
+      // console.log("Tempareacoord",tempareacoord);
 
 
 })
 
-console.log("Marker coord",markercoord);
-console.log("Areacoord",coord);
+// console.log("Marker coord",markercoord);
+// console.log("Areacoord",coord);
+
+
+
 
 
 // map.on('load', function () {
@@ -194,16 +237,15 @@ console.log("Areacoord",coord);
     // if(markercoord.length == cities.length){
       new mapboxgl.Marker({color:'red',})
       .setLngLat(marker)
-      .addTo(map);
+      .addTo(map1);
     // }
   })
 
-// })
+/
 
 
 
-
-map.on('load', async function () {
+map1.on('load', async function () {
   const sources = coord.map((coordinates, index) => ({
     id: 'polygon' + index,
     data: {
@@ -229,48 +271,152 @@ map.on('load', async function () {
     }
   }));
   
-  console.log("wait");
+  // console.log("wait");
   await Promise.all(sources.map(source => new Promise(resolve => {
-    map.addSource(source.id, source.data);
+    map1.addSource(source.id, source.data);
     resolve();
   })));
 
-  console.log("1 loaded");
+  // console.log("1 loaded");
 
   await Promise.all(layers.map(layer => new Promise(resolve => {
-    map.addLayer(layer);
+    map1.addLayer(layer);
     resolve();
   })));
 
-  console.log("2 loaded");
+  // console.log("2 loaded");
 });
         
 
     }
-    console.log("All loaded");
+    // console.log("All loaded");
 
 
     fetchData();
+
+
+  
+
 
 }, [tools]);
 
 
 
-// useEffect(() => {
 
+useEffect(()=>{
+  if (markerRef.current){
+    markerRef.current.setLngLat([realtime[1].location.coords.longitude, realtime[1].location.coords.latitude])
+    // console.log("Marker ref", realtime[1].location.coords.longitude, realtime[1].location.coords.latitude)
+  }
+
+  let cities;
+  async function fetchData() {
+    // console.log("Data got ");
+    
+    const querySnapshot = await getDocs(citiesCollectionRef);
+  
+   cities = querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data()
+  }));
+ 
+   }
+   fetchData()
+
+
+  
+  for (let i = 0; i < tempareacoord.length; i++) {
+    let isInAnyPolygon = false;
+    // const element = array[tempareacoord]
+    console.log(tempareacoord.length, "Length");
+    const point = {
+      latitude: realtime[1].location.coords.latitude,
+      longitude: realtime[1].location.coords.longitude
+    }
+    const subarrays = tempareacoord[i];
+
+    const objects = subarrays.map(subarray => ({
+      longitude: subarray[0],
+      latitude: subarray[1],
+      // age: subarray[2]
+    }));
    
-//   const map = new mapboxgl.Map({
-//     container: mapContainerRef.current,
-//     style: mapStyle,
-//     center: [76.67, 20.78], // longitude and latitude
-//     zoom: 12,
-//     attributionControl: false,
-//   });
+    if( point_in_polygon(point, objects)){
+      // console.log("Point in polygon", point, objects);
+      isInAnyPolygon = true;
+      // break;
+  }
+
+   setTimeout(()=>{
+    if(isInAnyPolygon){
+      // cities.map((city, index)=>{
+        // const coordinates = Object.values(city.parkcoord)
+           
+        // if (coordinates.length === tempareacoord[i].length && coordinates.every((value, index) => value === tempareacoord[i][index])) {
+        //   console.log("Vehicle in this parking area", city.parkname);
+        // }})
+        // console.log("Coordinates", coordinates);
+        // console.log("Tempareacoord", tempareacoord[i]);
+        // if(coordinates === tempareacoord[i]){
+          console.log("Vehicle in this parking area", i );
+        }else{
+          console.log("Vehicle not in this parking area" ,i);
+        }
+      // })
+      // console.log("Point in polygon", point, objects, "Vehicle in parking area" ,i);
+
+    // }
+    // else{
+    // console.log("Point not in polygon", point, objects);
+  }, 3000)
+  // isInAnyPolygon = false
+  
+  }
+
   
 
+},[realtime])
 
 
-// })
+
+
+
+
+function point_in_polygon(point, polygon) {
+  const num_vertices = polygon.length;
+  const x = point.latitude;
+  const y = point.longitude;
+  let inside = false;
+
+  let p1 = polygon[0];
+  let p2;
+for (let i = 1; i <= num_vertices; i++) {
+  p2 = polygon[i % num_vertices];
+
+  if (y > Math.min(p1.longitude, p2.longitude)) {
+      if (y <= Math.max(p1.longitude, p2.longitude)) {
+          if (x <= Math.max(p1.latitude, p2.latitude)) {
+              const x_intersection = ((y - p1.longitude) * (p2.latitude - p1.latitude)) / (p2.longitude - p1.longitude) + p1.latitude;
+
+              if (p1.latitude === p2.latitude || x <= x_intersection) {
+                  inside = !inside;
+              }
+          }
+      }
+  }
+
+  p1 = p2;
+}
+
+return inside;
+}
+
+
+
+// useEffect(()=>{
+//   vehiclemarker.setLngLat([realtime[0].location.coords.longitude, realtime[0].location.coords.latitude])
+
+// }, [realtime] )
 
 async function addParking()  {
   const citiesCollectionRef = collection(db, "names");
@@ -281,22 +427,13 @@ async function addParking()  {
     obj[index] = item;
     return obj;
   }, {});
-  console.log(parkcoord[0]);
+  // console.log(parkcoord[0]);
   const objectParkcoord = arrayToObject(parkcoord[0]);
  
-  console.log(objectParkcoord);
+  // console.log(objectParkcoord);
  
 
 
-
-  // try {
-  //     const docRef = await addDoc(collection(db, "parkings","Nagpur", parkname), {
-  //       todo: objectParkcoord,    
-  //     });
-  //     console.log("Document written with ID: ", docRef.id);
-  //   } catch (e) {
-  //     console.error("Error adding document: ", e);
-  //   }
 
   
 const cityData = {
@@ -319,20 +456,7 @@ addDoc(citiesCollectionRef, cityData)
 
 
 
-
-
-
-///////////////////////////////////////////////////////////////////////////
-
 }
- 
-// const todo = "aakf";
-
-useEffect(() => {
-  
-  }, []);
-  
-  
 
 
 
@@ -364,12 +488,17 @@ useEffect(() => {
      
         </div>
         }
+        {/* <div>
+        {realtime.map((real, index) => (
+      <p key={index}>{real.vehiclename}</p>
+    ))}
+        </div> */}
+         
            </div>
        </div>
-  
-    <div className="sidebar">
+ <div className="sidebar">
          Longitude: {lng} | Latitude: {lat} | Zoom: {zoom}       </div>
-    <div ref={mapContainerRef} style={{height:'90vh', width:'70vw'}} ></div>
+    <div ref={mapContainerRef} style={{height:'90vh', width:'70vw'}} ></div> 
     </div>
 
 

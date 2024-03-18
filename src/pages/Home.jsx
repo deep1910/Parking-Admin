@@ -6,10 +6,7 @@ import Navigation from '../Navigation.jsx';
 
 import { db } from '../firebaseConfig.js';
 import {doc, onSnapshot, getDocs, collection} from 'firebase/firestore';
-// import { Table, Thead, Tbody, Tr, Th, Td } from 'react-super-responsive-table';
-// import 'react-super-responsive-table/dist/SuperResponsiveTableStyle.css';
 
-// import DataTable, {createTheme} from 'react-data-table-component';
 import {
   Table,
   Header,
@@ -30,17 +27,6 @@ import { nodes } from '../nodes.js';
 const Home = () =>{
  
    const [parkings, setParkings] = useState([]);
-
-
-
-
-  // UserName</HeaderCell>
-              // <HeaderCell>Vehicle Name</HeaderCell>
-              // <HeaderCell>Enty Time</HeaderCell>
-              // <HeaderCell>Exit Time</HeaderCell>
-              // <HeaderCell>Duration</HeaderCell>
-              // <HeaderCell>Location</HeaderCell>
-              // <HeaderCell>Exit Permission
   
   const COLUMNS = [
     { label: 'username', renderCell: (item) => item.username },

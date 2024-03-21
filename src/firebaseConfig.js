@@ -32,6 +32,7 @@ export const db = getFirestore(app);
 export default app;
 export const database = getDatabase(app);
 
+
 // export const signUp = async (email, password) => {
 //     try {
 //       const userCredential = await createUserWithEmailAndPassword(FirebaseAuth, email, password);
